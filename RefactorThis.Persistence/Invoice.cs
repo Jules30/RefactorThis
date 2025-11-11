@@ -30,75 +30,44 @@ namespace RefactorThis.Persistence
 		public string PartialPay(Payment payment) 
 		{
             string responseMessage;
+
             bool isPaymentFinalPartial = (Amount - AmountPaid) == payment.Amount;
+
             AmountPaid += payment.Amount;
             Payments.Add(payment);
-            if (isPaymentFinalPartial)
-            {
-                switch (Type)
-                {
-                    case InvoiceType.Standard:
-                        responseMessage = "final partial payment received, invoice is now fully paid";
-                        break;
-                    case InvoiceType.Commercial:
-                        TaxAmount += payment.Amount * 0.14m;
-                        responseMessage = "final partial payment received, invoice is now fully paid";
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
 
-            }
-            else
+            switch (Type)
             {
-                switch (Type)
-                {
-                    case InvoiceType.Standard:
-                        responseMessage = "another partial payment received, still not fully paid";
-                        break;
-                    case InvoiceType.Commercial:
-                        TaxAmount += payment.Amount * 0.14m;
-                        responseMessage = "another partial payment received, still not fully paid";
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
+                case InvoiceType.Standard:
+                    responseMessage = isPaymentFinalPartial ? "final partial payment received, invoice is now fully paid" : "another partial payment received, still not fully paid";
+                    break;
+                case InvoiceType.Commercial:
+                    TaxAmount += payment.Amount * 0.14m;
+                    responseMessage = isPaymentFinalPartial ? "final partial payment received, invoice is now fully paid" : "another partial payment received, still not fully paid";
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
             return responseMessage;
         }
 
 		public string FullPay(Payment payment) {
             string responseMessage;
+
+            bool isFullPayment = Amount == payment.Amount;
+
             AmountPaid = payment.Amount;
             TaxAmount = payment.Amount * 0.14m;
             Payments.Add(payment);
-            if (Amount == payment.Amount)
+
+            switch (Type)
             {
-                switch (Type)
-                {
-                    case InvoiceType.Standard:
-                        responseMessage = "invoice is now fully paid";
-                        break;
-                    case InvoiceType.Commercial:
-                        responseMessage = "invoice is now fully paid";
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
-            }
-            else
-            {
-                switch (Type)
-                {
-                    case InvoiceType.Standard:
-                        responseMessage = "invoice is now partially paid";
-                        break;
-                    case InvoiceType.Commercial:
-                        responseMessage = "invoice is now partially paid";
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
+                case InvoiceType.Standard:
+                case InvoiceType.Commercial:
+                    responseMessage = isFullPayment ?  "invoice is now fully paid" : "invoice is now partially paid";
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
             return responseMessage;
         }
