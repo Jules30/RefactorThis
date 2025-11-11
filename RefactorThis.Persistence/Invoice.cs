@@ -29,7 +29,7 @@ namespace RefactorThis.Persistence
 		public bool IsPaymentsGreaterThanThePartial(Payment payment) => Payments.Sum(x => x.Amount) != 0 && payment.Amount > (Amount - AmountPaid);
 		public string PartialPay(Payment payment)
 		{
-			if (!InvoiceTypeExtension.IsInvoiceTypeSupported(Type))
+			if (!Type.IsInvoiceTypeSupported())
 			{
 				throw new ArgumentOutOfRangeException();
 			}
@@ -50,7 +50,7 @@ namespace RefactorThis.Persistence
 
 		public string FullPay(Payment payment)
 		{
-            if (!InvoiceTypeExtension.IsInvoiceTypeSupported(Type))
+            if (!Type.IsInvoiceTypeSupported())
 			{
 				throw new ArgumentOutOfRangeException();
 			}
