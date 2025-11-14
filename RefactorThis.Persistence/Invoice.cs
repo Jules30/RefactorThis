@@ -6,8 +6,7 @@ namespace RefactorThis.Persistence
 {
 	public class Invoice
 	{
-		private readonly decimal _taxPercentage = 0.14m;
-        private readonly InvoiceRepository _repository;
+		private readonly InvoiceRepository _repository;
 		public Invoice(InvoiceRepository repository)
 		{
 			_repository = repository;
@@ -27,43 +26,51 @@ namespace RefactorThis.Persistence
 		public bool InvoiceHasPayments { get => Payments != null && Payments.Any(); }
 		public bool InvoiceIsAlreadyFullyPaid { get => Payments.Sum(x => x.Amount) != 0 && Amount == Payments.Sum(x => x.Amount); }
 		public bool IsPaymentsGreaterThanThePartial(Payment payment) => Payments.Sum(x => x.Amount) != 0 && payment.Amount > (Amount - AmountPaid);
-		public string PartialPay(Payment payment)
+
+		public string PartialPay(Payment payment) 
 		{
-			if (!InvoiceTypeExtension.IsInvoiceTypeSupported(Type))
-			{
-				throw new ArgumentOutOfRangeException();
-			}
-			bool isPaymentFinalPartial = (Amount - AmountPaid) == payment.Amount;
+            string responseMessage;
 
-			string responseMessage = isPaymentFinalPartial ? "final partial payment received, invoice is now fully paid" : "another partial payment received, still not fully paid";
+            bool isPaymentFinalPartial = (Amount - AmountPaid) == payment.Amount;
 
-			if (Type == InvoiceType.Commercial)
-			{
-				TaxAmount += payment.Amount * _taxPercentage;
-			}
+            AmountPaid += payment.Amount;
+            Payments.Add(payment);
 
-			AmountPaid += payment.Amount;
-			Payments.Add(payment);
+            switch (Type)
+            {
+                case InvoiceType.Standard:
+                    responseMessage = isPaymentFinalPartial ? "final partial payment received, invoice is now fully paid" : "another partial payment received, still not fully paid";
+                    break;
+                case InvoiceType.Commercial:
+                    TaxAmount += payment.Amount * 0.14m;
+                    responseMessage = isPaymentFinalPartial ? "final partial payment received, invoice is now fully paid" : "another partial payment received, still not fully paid";
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            return responseMessage;
+        }
 
-			return responseMessage;
-		}
+		public string FullPay(Payment payment) {
+            string responseMessage;
 
-		public string FullPay(Payment payment)
-		{
-            if (!InvoiceTypeExtension.IsInvoiceTypeSupported(Type))
-			{
-				throw new ArgumentOutOfRangeException();
-			}
+            bool isFullPayment = Amount == payment.Amount;
 
-			bool isFullPayment = Amount == payment.Amount;
-			string responseMessage = isFullPayment ? "invoice is now fully paid" : "invoice is now partially paid";
+            AmountPaid = payment.Amount;
+            TaxAmount = payment.Amount * 0.14m;
+            Payments.Add(payment);
 
-			AmountPaid = payment.Amount;
-			TaxAmount = payment.Amount * _taxPercentage;
-			Payments.Add(payment);
-
-			return responseMessage;
-		}
+            switch (Type)
+            {
+                case InvoiceType.Standard:
+                case InvoiceType.Commercial:
+                    responseMessage = isFullPayment ?  "invoice is now fully paid" : "invoice is now partially paid";
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            return responseMessage;
+        }
 	}
 
 	public enum InvoiceType
@@ -71,13 +78,4 @@ namespace RefactorThis.Persistence
 		Standard,
 		Commercial
 	}
-
-	public static class InvoiceTypeExtension
-	{
-		public static bool IsInvoiceTypeSupported(this InvoiceType invoiceType)
-		{
-			return invoiceType == InvoiceType.Standard || invoiceType == InvoiceType.Commercial;
-		}
-	}
-	
 }
